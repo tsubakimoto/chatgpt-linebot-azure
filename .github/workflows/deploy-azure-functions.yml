@@ -63,6 +63,13 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Azure App Service Settings
+        uses: Azure/appservice-settings@v1
+        with:
+          app-name: ${{ vars.AZURE_FUNCTION_APP_NAME }}
+          slot-name: 'Production'
+          app-settings-json: '[{"name":"AzureOpenAIApiKey","value":"${{ secrets.AZURE_OPENAI_APIKEY }}","slotSetting":false},{"name":"AzureOpenAIDeploymentName","value":"${{ vars.AZURE_OPENAI_DEPLOYMENT_NAME }}","slotSetting":false},{"name":"AzureOpenAIResourceName","value":"${{ vars.AZURE_OPENAI_RESOURCE_NAME }}","slotSetting":false},{"name":"LineAccessToken","value":"${{ secrets.LINE_ACCESS_TOKEN }}","slotSetting":false},{"name":"LineChannelSecret","value":"${{ secrets.LINE_CHANNEL_SECRET }}","slotSetting":false}]'
+
       - name: 'Run Azure Functions Action'
         uses: Azure/functions-action@v1
         id: fa
