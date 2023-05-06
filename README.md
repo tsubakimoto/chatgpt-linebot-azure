@@ -1,4 +1,4 @@
 # ChatGPT LINE Bot on Azure
 
-Azure Functions ‚Æ LINE Messaging API ‚ğg‚Á‚Ä ChatGPT ‚Æ‚â‚èæ‚è‚Å‚«‚éƒT[ƒrƒX‚ğì‚Á‚Ä‚İ‚½
+Azure Functions ã¨ LINE Messaging API ã‚’ä½¿ã£ã¦ ChatGPT ã¨ã‚„ã‚Šå–ã‚Šã§ãã‚‹ã‚µãƒ¼ãƒ“ã‚¹ã‚’ä½œã£ã¦ã¿ãŸ  
 https://zenn.dev/takunology/articles/linebotandazure-gpt
