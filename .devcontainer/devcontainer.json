@@ -1,6 +1,9 @@
 {
 	"name": "Azure Functions & C# - .NET 6 (In-Process)",
-	"dockerFile": "Dockerfile",
+	// "dockerFile": "Dockerfile",
+	"dockerComposeFile": "docker-compose.yml",
+	"workspaceFolder": "/workspace",
+	"service": "function",
 	"forwardPorts": [ 7071 ],
 
 	// Configure tool-specific properties.
@@ -10,7 +13,8 @@
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
 				"ms-azuretools.vscode-azurefunctions",
-				"ms-dotnettools.csharp"
+				"ms-dotnettools.csharp",
+				"ms-vscode.vscode-node-azure-pack"
 			]
 		}
 	},
