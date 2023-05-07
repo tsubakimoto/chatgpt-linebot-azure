@@ -25,4 +25,4 @@ https://zenn.dev/takunology/articles/linebotandazure-gpt
 1. Start Debugging
 2. Change port 7071 visibility to public
 3. Open port 7071 in browser
-4. Copy URL and Paste in LINE Developer Console
+4. Copy URL and Paste in [LINE Developer Console](https://developers.line.biz/)
