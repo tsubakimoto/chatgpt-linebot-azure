@@ -5,13 +5,18 @@ namespace ChatGPTLineBot;
 public class Bot
 {
     private static readonly string _messagingApiUrl = "https://api.line.me/v2/bot/message/reply";
-    private static HttpClient _httpClient = new();
+    private static readonly HttpClient _httpClient = new();
+    private static readonly string _base_system_message = "You are a helpful assistant.";
+    private static readonly IList<ChatMessage> _conversations = new List<ChatMessage>();
 
     private readonly ILogger<Bot> logger;
 
     public Bot(ILogger<Bot> logger)
     {
         this.logger = logger;
+
+        // init chat conversations
+        _conversations.Add(new ChatMessage(ChatRole.System, _base_system_message));
     }
 
     [FunctionName("Bot")]
@@ -45,6 +50,8 @@ public class Bot
 
     private static async Task<string> RunCompletionAsync(string prompt)
     {
+        _conversations.Add(new ChatMessage(ChatRole.User, prompt));
+
         var resourceName = Environment.GetEnvironmentVariable("AzureOpenAIResourceName");
         var apiKey = Environment.GetEnvironmentVariable("AzureOpenAIApiKey");
         var deploymentName = Environment.GetEnvironmentVariable("AzureOpenAIDeploymentName");
@@ -53,23 +60,24 @@ public class Bot
                 new Uri($"https://{resourceName}.openai.azure.com/"),
                 new AzureKeyCredential(apiKey));
 
-        var response = await client.GetChatCompletionsAsync(
-            deploymentName,
-            new ChatCompletionsOptions()
-            {
-                Messages =
-                {
-                    new ChatMessage(ChatRole.System, @"You are an AI assistant that helps people find information."),
-                    new ChatMessage(ChatRole.User, prompt),
-                },
-                Temperature = (float)0.7,
-                MaxTokens = 800,
-                NucleusSamplingFactor = (float)0.95,
-                FrequencyPenalty = 0,
-                PresencePenalty = 0,
-            });
+        ChatCompletionsOptions options = new()
+        {
+            Temperature = (float)0.7,
+            MaxTokens = 800,
+            NucleusSamplingFactor = (float)0.95,
+            FrequencyPenalty = 0,
+            PresencePenalty = 0,
+        };
+        foreach (var c in _conversations)
+        {
+            options.Messages.Add(c);
+        }
 
-        return response?.Value?.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty;
+        var response = await client.GetChatCompletionsAsync(deploymentName, options);
+        var content = response?.Value?.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty;
+        _conversations.Add(new ChatMessage(ChatRole.Assistant, content));
+
+        return content;
     }
 
     private static async Task ReplyAsync(string replyToken, string message, string accessToken)
@@ -82,7 +90,8 @@ public class Bot
             replyToken = replyToken,
             messages = new List<Message>()
             {
-                new Message(){
+                new Message
+                {
                     type = "text",
                     text = message
                 }
