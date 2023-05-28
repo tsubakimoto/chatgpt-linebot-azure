@@ -67,7 +67,7 @@ public class Bot
         ChatCompletionsOptions options = new()
         {
             Temperature = (float)0.7,
-            MaxTokens = 800,
+            MaxTokens = 500,
             NucleusSamplingFactor = (float)0.95,
             FrequencyPenalty = 0,
             PresencePenalty = 0,
