@@ -7,8 +7,8 @@ public class Bot
     private static readonly string _messagingApiUrl = "https://api.line.me/v2/bot/message/reply";
     private static readonly HttpClient _httpClient = new();
     private static readonly string _baseSystemMessage = "You are a helpful assistant.";
-    private static readonly ChatMessage _systemRoleChatMessage = new(ChatRole.System, _baseSystemMessage);
-    private static readonly IDictionary<string, IList<ChatMessage>> _conversations = new Dictionary<string, IList<ChatMessage>>();
+    private static readonly ChatRequestMessage _systemRoleChatMessage = new ChatRequestSystemMessage(_baseSystemMessage);
+    private static readonly IDictionary<string, IList<ChatRequestMessage>> _conversations = new Dictionary<string, IList<ChatRequestMessage>>();
 
     private readonly ILogger<Bot> logger;
 
@@ -33,7 +33,7 @@ public class Bot
 
         if (!_conversations.ContainsKey(json.destination))
         {
-            _conversations.Add(json.destination, new List<ChatMessage> { _systemRoleChatMessage });
+            _conversations.Add(json.destination, new List<ChatRequestMessage> { _systemRoleChatMessage });
             logger.LogDebug("Init conversation: {0}", json.destination);
         }
 
@@ -54,7 +54,7 @@ public class Bot
 
     private async Task<string> RunCompletionAsync(string userId, string prompt)
     {
-        _conversations[userId].Add(new ChatMessage(ChatRole.User, prompt));
+        _conversations[userId].Add(new ChatRequestUserMessage(prompt));
 
         var resourceName = Environment.GetEnvironmentVariable("AzureOpenAIResourceName");
         var apiKey = Environment.GetEnvironmentVariable("AzureOpenAIApiKey");
@@ -66,6 +66,7 @@ public class Bot
 
         ChatCompletionsOptions options = new()
         {
+            DeploymentName = deploymentName,
             Temperature = (float)0.7,
             MaxTokens = 500,
             NucleusSamplingFactor = (float)0.95,
@@ -77,10 +78,10 @@ public class Bot
             options.Messages.Add(c);
         }
 
-        var response = await client.GetChatCompletionsAsync(deploymentName, options);
+        var response = await client.GetChatCompletionsAsync(options);
         var choice = response?.Value?.Choices?.FirstOrDefault();
         var content = choice?.Message?.Content ?? string.Empty;
-        _conversations[userId].Add(new ChatMessage(ChatRole.Assistant, content));
+        _conversations[userId].Add(new ChatRequestAssistantMessage(content));
         logger.LogDebug("Finish reason: {0}", choice?.FinishReason);
         logger.LogDebug("Conversation count: {0}", _conversations[userId].Count);
 
