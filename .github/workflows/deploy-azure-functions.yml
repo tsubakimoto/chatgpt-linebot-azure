@@ -125,7 +125,7 @@ jobs:
         with:
           app-name: '${{ vars.AZURE_FUNCTION_APP_NAME }}'
           slot-name: 'Production'
-          package: './output'
+          package: '.'
 
       - name: Az CLI Logout
         run: az logout
