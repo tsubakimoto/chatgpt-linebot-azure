@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace ChatGPTLineBot;
@@ -17,7 +19,7 @@ public class Bot
         this.logger = logger;
     }
 
-    [FunctionName("Bot")]
+    [Function("Bot")]
     public async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req)
     {
