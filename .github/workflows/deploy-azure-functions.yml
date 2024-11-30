@@ -76,10 +76,11 @@ jobs:
         run: dotnet restore "${{ env.WORKING_DIRECTORY }}"
         
       - name: Build
-        run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
+        # run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
+        run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore --output ./output
         
-      - name: Publish
-        run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output ./output
+      # - name: Publish
+      #   run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output ./output
 
       - name: Publish Artifacts
         uses: actions/upload-artifact@v4
@@ -124,9 +125,9 @@ jobs:
         uses: Azure/functions-action@v1
         id: fa
         with:
-          app-name: ${{ vars.AZURE_FUNCTION_APP_NAME }}
+          app-name: '${{ vars.AZURE_FUNCTION_APP_NAME }}'
           slot-name: 'Production'
-          package: .
+          package: '.'
 
       - name: Az CLI Logout
         run: az logout
