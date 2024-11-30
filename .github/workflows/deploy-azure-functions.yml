@@ -65,28 +65,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@v4
 
       - name: Setup DotNet ${{ env.DOTNET_VERSION }} Environment
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v1
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore
-        run: dotnet restore "${{ env.WORKING_DIRECTORY }}"
-        
-      - name: Build
-        # run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore
-        run: dotnet build "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-restore --output ./output
-        
-      # - name: Publish
-      #   run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output ./output
+      - name: 'Resolve Project Dependencies Using Dotnet'
+        shell: bash
+        run: |
+          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+          dotnet build --configuration Release --output ./output
+          popd
 
-      - name: Publish Artifacts
+      - name: 'Upload build output'
         uses: actions/upload-artifact@v4
         with:
           name: functionapp
-          path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output
+          path: './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
 
   deploy:
     runs-on: ubuntu-latest
@@ -127,7 +125,7 @@ jobs:
         with:
           app-name: '${{ vars.AZURE_FUNCTION_APP_NAME }}'
           slot-name: 'Production'
-          package: '.'
+          package: './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
 
       - name: Az CLI Logout
         run: az logout
