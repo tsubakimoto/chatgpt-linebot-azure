@@ -1,22 +1,22 @@
-using System.Net.Http.Json;
-
-using JsonSerializer = System.Text.Json.JsonSerializer;
-
 namespace ChatGPTLineBot;
 
 public class Bot
 {
     private static readonly string _messagingApiUrl = "https://api.line.me/v2/bot/message/reply";
-    private static readonly HttpClient _httpClient = new();
     private static readonly string _baseSystemMessage = "You are a helpful assistant.";
     private static readonly ChatRequestMessage _systemRoleChatMessage = new ChatRequestSystemMessage(_baseSystemMessage);
     private static readonly IDictionary<string, IList<ChatRequestMessage>> _conversations = new Dictionary<string, IList<ChatRequestMessage>>();
 
     private readonly ILogger<Bot> logger;
+    private readonly IConfiguration configuration;
+    private readonly HttpClient httpClient;
 
-    public Bot(ILogger<Bot> logger)
+    public Bot(ILogger<Bot> logger, IConfiguration configuration, IHttpClientFactory httpClientFactory)
     {
         this.logger = logger;
+        this.configuration = configuration;
+
+        httpClient = httpClientFactory.CreateClient();
     }
 
     [Function("Bot")]
@@ -39,8 +39,8 @@ public class Bot
             logger.LogDebug("Init conversation: {0}", json.destination);
         }
 
-        var channelSecret = Environment.GetEnvironmentVariable("LineChannelSecret");
-        var accessToken = Environment.GetEnvironmentVariable("LineAccessToken");
+        var channelSecret = configuration["LineChannelSecret"];
+        var accessToken = configuration["LineAccessToken"];
 
         if (IsSignature(xLineSignature, requestBody, channelSecret)
             && json.EventType == "message")
@@ -58,9 +58,9 @@ public class Bot
     {
         _conversations[userId].Add(new ChatRequestUserMessage(prompt));
 
-        var resourceName = Environment.GetEnvironmentVariable("AzureOpenAIResourceName");
-        var apiKey = Environment.GetEnvironmentVariable("AzureOpenAIApiKey");
-        var deploymentName = Environment.GetEnvironmentVariable("AzureOpenAIDeploymentName");
+        var resourceName = configuration["AzureOpenAIResourceName"];
+        var apiKey = configuration["AzureOpenAIApiKey"];
+        var deploymentName = configuration["AzureOpenAIDeploymentName"];
 
         OpenAIClient client = new(
                 new Uri($"https://{resourceName}.openai.azure.com/"),
@@ -90,12 +90,12 @@ public class Bot
         return content;
     }
 
-    private static async Task ReplyAsync(string replyToken, string message, string accessToken)
+    private async Task ReplyAsync(string replyToken, string message, string accessToken)
     {
-        _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-        var response = await _httpClient.PostAsJsonAsync(_messagingApiUrl, new LineTextReplyJson()
+        var response = await httpClient.PostAsJsonAsync(_messagingApiUrl, new LineTextReplyJson()
         {
             replyToken = replyToken,
             messages = new List<Message>()
