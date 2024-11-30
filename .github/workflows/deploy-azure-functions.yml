@@ -76,7 +76,8 @@ jobs:
 
       - name: Azure Functions Configuration
         run: |
-          az functionapp config set --name ${{ vars.AZURE_FUNCTION_APP_NAME }} --resource-group ${{ vars.RESOURCE_GROUP_NAME }} --linux-fx-version "DOTNET-ISOLATED|8.0"
+          az functionapp config appsettings set --settings FUNCTIONS_EXTENSION_VERSION=~4 --name ${{ vars.AZURE_FUNCTION_APP_NAME }} --resource-group ${{ vars.RESOURCE_GROUP_NAME }} --slot Production
+          az functionapp config set --name ${{ vars.AZURE_FUNCTION_APP_NAME }} --resource-group ${{ vars.RESOURCE_GROUP_NAME }} --slot Production --linux-fx-version "DOTNET-ISOLATED|8.0"
 
       - name: 'Run Azure Functions Action'
         uses: Azure/functions-action@v1
