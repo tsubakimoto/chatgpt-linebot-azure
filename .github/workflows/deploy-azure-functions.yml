@@ -6,13 +6,13 @@ on:
       - main
     paths:
       - 'ChatGPTLineBot/**'
+      - '.github/workflows/deploy-azure-functions.yml'
   workflow_dispatch:
 
 env:
   AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'
   CONFIGURATION: Release
   DOTNET_VERSION: 8.0.x
-  WORKING_DIRECTORY: ChatGPTLineBot
 
 jobs:
   build:
@@ -56,18 +56,6 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      # - name: Azure App Service Settings
-      #   uses: Azure/appservice-settings@v1
-      #   with:
-      #     app-name: ${{ vars.AZURE_FUNCTION_APP_NAME }}
-      #     slot-name: 'Production'
-      #     app-settings-json: '[{"name":"AzureOpenAIApiKey","value":"${{ secrets.AZURE_OPENAI_APIKEY }}","slotSetting":false},{"name":"AzureOpenAIDeploymentName","value":"${{ vars.AZURE_OPENAI_DEPLOYMENT_NAME }}","slotSetting":false},{"name":"AzureOpenAIResourceName","value":"${{ vars.AZURE_OPENAI_RESOURCE_NAME }}","slotSetting":false},{"name":"LineAccessToken","value":"${{ secrets.LINE_ACCESS_TOKEN }}","slotSetting":false},{"name":"LineChannelSecret","value":"${{ secrets.LINE_CHANNEL_SECRET }}","slotSetting":false}]'
-
-      # - name: Azure Functions Configuration
-      #   run: |
-      #     az functionapp config appsettings set --settings FUNCTIONS_EXTENSION_VERSION=~4 --name ${{ vars.AZURE_FUNCTION_APP_NAME }} --resource-group ${{ vars.RESOURCE_GROUP_NAME }}
-      #     az functionapp config set --name ${{ vars.AZURE_FUNCTION_APP_NAME }} --resource-group ${{ vars.RESOURCE_GROUP_NAME }} --linux-fx-version "DOTNET-ISOLATED|8.0"
 
       - name: 'Run Azure Functions Action'
         uses: Azure/functions-action@v1
