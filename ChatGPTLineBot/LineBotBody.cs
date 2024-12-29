@@ -2,33 +2,56 @@
 
 public class LineMessageReceiveJson
 {
-    public string destination { get; set; }
-    public List<Event> events { get; set; }
+    [JsonPropertyName("destination")]
+    public string? Destination { get; set; }
 
-    private Event FirstEvent => events?.FirstOrDefault();
-    public string Message => FirstEvent?.message?.text;
-    public string ReplyToken => FirstEvent?.replyToken;
-    public string EventType => FirstEvent?.type;
+    [JsonPropertyName("events")]
+    public List<Event>? Events { get; set; }
+
+    private Event? FirstEvent => Events?.FirstOrDefault();
+
+    public string? Message => FirstEvent?.Message?.Text;
+
+    public string? ReplyToken => FirstEvent?.ReplyToken;
+
+    public string? EventType => FirstEvent?.Type;
 }
 
 public class Event
 {
-    public string replyToken { get; set; }
-    public string type { get; set; }
-    public object timestamp { get; set; }
-    public Source source { get; set; }
-    public Message message { get; set; }
+    [JsonPropertyName("replyToken")]
+    public string? ReplyToken { get; set; }
+
+    [JsonPropertyName("type")]
+    public string? Type { get; set; }
+
+    [JsonPropertyName("timestamp")]
+    public object? Timestamp { get; set; }
+
+    [JsonPropertyName("source")]
+    public Source? Source { get; set; }
+
+    [JsonPropertyName("message")]
+    public Message? Message { get; set; }
 }
 
 public class Message
 {
-    public string id { get; set; }
-    public string type { get; set; }
-    public string text { get; set; }
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
+
+    [JsonPropertyName("type")]
+    public string? Type { get; set; }
+
+    [JsonPropertyName("text")]
+    public string? Text { get; set; }
 }
 
 public class Source
 {
-    public string type { get; set; }
-    public string userId { get; set; }
+    [JsonPropertyName("type")]
+    public string? Type { get; set; }
+
+    [JsonPropertyName("userId")]
+    public string? UserId { get; set; }
 }

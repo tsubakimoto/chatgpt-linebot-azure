@@ -7,6 +7,8 @@ global using System.Net.Http.Headers;
 global using System.Net.Http.Json;
 global using System.Security.Cryptography;
 global using System.Text;
+global using System.Text.Json;
+global using System.Text.Json.Serialization;
 global using System.Threading.Tasks;
 
 global using Azure.AI.OpenAI;
@@ -23,5 +25,3 @@ global using Microsoft.Extensions.Logging;
 global using Microsoft.SemanticKernel;
 global using Microsoft.SemanticKernel.ChatCompletion;
 global using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
-
-global using JsonSerializer = System.Text.Json.JsonSerializer;

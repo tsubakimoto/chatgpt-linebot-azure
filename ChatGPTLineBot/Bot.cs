@@ -45,12 +45,12 @@ public class Bot
         var json = JsonSerializer.Deserialize<LineMessageReceiveJson>(requestBody);
         logger.LogDebug("Message: {0}", json.Message);
 
-        if (!_histories.ContainsKey(json.destination))
+        if (!_histories.ContainsKey(json.Destination))
         {
             var history = new ChatHistory();
             history.AddSystemMessage(_baseSystemMessage);
-            _histories.Add(json.destination, history);
-            logger.LogDebug("Init conversation: {0}", json.destination);
+            _histories.Add(json.Destination, history);
+            logger.LogDebug("Init conversation: {0}", json.Destination);
         }
 
         var channelSecret = configuration["LineChannelSecret"];
@@ -59,8 +59,8 @@ public class Bot
         if (IsSignature(xLineSignature, requestBody, channelSecret)
             && json.EventType == "message")
         {
-            var history = _histories[json.destination];
-            var result = await RunCompletionAsync(history, json.destination, json.Message);
+            var history = _histories[json.Destination];
+            var result = await RunCompletionAsync(history, json.Destination, json.Message);
 
             await ReplyAsync(json.ReplyToken, result, accessToken);
             return new OkResult();
@@ -92,8 +92,8 @@ public class Bot
             {
                 new Message
                 {
-                    type = "text",
-                    text = message
+                    Type = "text",
+                    Text = message
                 }
             }
         });
