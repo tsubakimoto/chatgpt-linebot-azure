@@ -9,7 +9,9 @@ builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddAzureOpenAIChatCompletion(
     c["AzureOpenAIDeploymentName"]!,
-    new AzureOpenAIClient(new Uri(c["AzureOpenAIEndpoint"]!), new ApiKeyCredential(c["AzureOpenAIApiKey"]!)))
+    new AzureOpenAIClient(
+        new Uri(c["AzureOpenAIEndpoint"]!),
+        new DefaultAzureCredential()))
     .AddDistributedMemoryCache();
 
 builder.Services.AddKernel();

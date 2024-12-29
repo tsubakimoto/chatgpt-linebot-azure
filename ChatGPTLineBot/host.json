@@ -9,7 +9,7 @@
       "enableLiveMetricsFilters": true
     },
     "logLevel": {
-      "ChatGPTLineBot": "Debug"
+      "Function": "Debug"
     }
   }
 }
