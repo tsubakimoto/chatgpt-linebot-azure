@@ -4,17 +4,29 @@ public class Bot
 {
     private static readonly string _messagingApiUrl = "https://api.line.me/v2/bot/message/reply";
     private static readonly string _baseSystemMessage = "You are a helpful assistant.";
-    private static readonly ChatRequestMessage _systemRoleChatMessage = new ChatRequestSystemMessage(_baseSystemMessage);
-    private static readonly IDictionary<string, IList<ChatRequestMessage>> _conversations = new Dictionary<string, IList<ChatRequestMessage>>();
+    private static readonly Dictionary<string, ChatHistory> _histories = new();
+    private static readonly AzureOpenAIPromptExecutionSettings _settings = new()
+    {
+        Temperature = (float)0.7,
+        MaxTokens = 500,
+        FrequencyPenalty = 0,
+        PresencePenalty = 0,
+    };
 
     private readonly ILogger<Bot> logger;
     private readonly IConfiguration configuration;
+    private readonly IChatCompletionService chatService;
     private readonly HttpClient httpClient;
 
-    public Bot(ILogger<Bot> logger, IConfiguration configuration, IHttpClientFactory httpClientFactory)
+    public Bot(
+        ILogger<Bot> logger,
+        IConfiguration configuration,
+        IChatCompletionService chatService,
+        IHttpClientFactory httpClientFactory)
     {
         this.logger = logger;
         this.configuration = configuration;
+        this.chatService = chatService;
 
         httpClient = httpClientFactory.CreateClient();
     }
@@ -33,9 +45,11 @@ public class Bot
         var json = JsonSerializer.Deserialize<LineMessageReceiveJson>(requestBody);
         logger.LogDebug("Message: {0}", json.Message);
 
-        if (!_conversations.ContainsKey(json.destination))
+        if (!_histories.ContainsKey(json.destination))
         {
-            _conversations.Add(json.destination, new List<ChatRequestMessage> { _systemRoleChatMessage });
+            var history = new ChatHistory();
+            history.AddSystemMessage(_baseSystemMessage);
+            _histories.Add(json.destination, history);
             logger.LogDebug("Init conversation: {0}", json.destination);
         }
 
@@ -45,8 +59,8 @@ public class Bot
         if (IsSignature(xLineSignature, requestBody, channelSecret)
             && json.EventType == "message")
         {
-            var result = await RunCompletionAsync(json.destination, json.Message);
-            logger.LogDebug("ChatGPT: {0}", result);
+            var history = _histories[json.destination];
+            var result = await RunCompletionAsync(history, json.destination, json.Message);
 
             await ReplyAsync(json.ReplyToken, result, accessToken);
             return new OkResult();
@@ -54,40 +68,16 @@ public class Bot
         return new BadRequestResult();
     }
 
-    private async Task<string> RunCompletionAsync(string userId, string prompt)
+    private async Task<string> RunCompletionAsync(ChatHistory history, string userId, string prompt)
     {
-        _conversations[userId].Add(new ChatRequestUserMessage(prompt));
+        history.AddUserMessage(prompt);
+        logger.LogDebug($"{history.Last().Role} >>> {history.Last().Content}");
 
-        var resourceName = configuration["AzureOpenAIResourceName"];
-        var apiKey = configuration["AzureOpenAIApiKey"];
-        var deploymentName = configuration["AzureOpenAIDeploymentName"];
+        var assistant = await chatService.GetChatMessageContentAsync(history, _settings);
+        history.Add(assistant);
+        logger.LogDebug($"{history.Last().Role} >>> {history.Last().Content}");
 
-        OpenAIClient client = new(
-                new Uri($"https://{resourceName}.openai.azure.com/"),
-                new AzureKeyCredential(apiKey));
-
-        ChatCompletionsOptions options = new()
-        {
-            DeploymentName = deploymentName,
-            Temperature = (float)0.7,
-            MaxTokens = 500,
-            NucleusSamplingFactor = (float)0.95,
-            FrequencyPenalty = 0,
-            PresencePenalty = 0,
-        };
-        foreach (var c in _conversations[userId])
-        {
-            options.Messages.Add(c);
-        }
-
-        var response = await client.GetChatCompletionsAsync(options);
-        var choice = response?.Value?.Choices?.FirstOrDefault();
-        var content = choice?.Message?.Content ?? string.Empty;
-        _conversations[userId].Add(new ChatRequestAssistantMessage(content));
-        logger.LogDebug("Finish reason: {0}", choice?.FinishReason);
-        logger.LogDebug("Conversation count: {0}", _conversations[userId].Count);
-
-        return content;
+        return assistant.ToString();
     }
 
     private async Task ReplyAsync(string replyToken, string message, string accessToken)
