@@ -2,8 +2,8 @@ namespace ChatGPTLineBot;
 
 public class Bot
 {
-    private static readonly string _messagingApiUrl = "/v2/bot/message/reply";
-    private static readonly string _contentApiUrl = "/v2/bot/message/{0}/content";
+    private static readonly string _messagingApiEndpoint = "/v2/bot/message/reply";
+    private static readonly string _contentApiEndpoint = "/v2/bot/message/{0}/content";
     private static readonly string _baseSystemMessage = "You are a helpful assistant.";
     private static readonly TextContent _imageExplainContent = new("Ç±ÇÃâÊëúÇê‡ñæÇµÇƒÇ≠ÇæÇ≥Ç¢ÅB");
     private static readonly Dictionary<string, ChatHistory> _histories = new();
@@ -39,11 +39,22 @@ public class Bot
         logger.LogInformation("C# HTTP trigger function processed a request.");
 
         req.Headers.TryGetValue("X-Line-Signature", out var xLineSignature);
+        if (string.IsNullOrEmpty(xLineSignature))
+        {
+            logger.LogError("Failed to get X-Line-Signature.");
+            return new BadRequestResult();
+        }
 
         var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
         logger.LogDebug("Request body: {0}", requestBody);
 
         var json = JsonSerializer.Deserialize<LineMessageReceiveJson>(requestBody);
+        if (json is null)
+        {
+            logger.LogError("Failed to deserialize request body.");
+            return new BadRequestResult();
+        }
+
         logger.LogDebug("Message: {0}", json.MessageText);
 
         if (!_histories.ContainsKey(json.Destination))
@@ -55,21 +66,19 @@ public class Bot
         }
 
         var channelSecret = configuration["LineChannelSecret"];
-        var accessToken = configuration["LineAccessToken"];
-
-        if (IsSignature(xLineSignature, requestBody, channelSecret)
-            && json.EventType == "message")
+        if (IsSignature(xLineSignature!, requestBody, channelSecret!) && json.IsMessageEvent)
         {
+            var accessToken = configuration["LineAccessToken"]!;
             var history = _histories[json.Destination];
 
             string result = string.Empty;
             if (json.IsTextType)
             {
-                result = await RunCompletionAsync(history, json.Destination, json.MessageText);
+                result = await RunCompletionAsync(history, json.MessageText);
             }
             else if (json.IsImageType)
             {
-                result = await ExplainImageAsync(history, json.FirstMessage.Id, accessToken);
+                result = await ExplainImageAsync(history, json.FirstMessage?.Id ?? string.Empty, accessToken);
             }
 
             await ReplyAsync(json.ReplyToken, result, accessToken);
@@ -78,7 +87,7 @@ public class Bot
         return new BadRequestResult();
     }
 
-    private async Task<string> RunCompletionAsync(ChatHistory history, string userId, string prompt)
+    private async Task<string> RunCompletionAsync(ChatHistory history, string prompt)
     {
         history.AddUserMessage(prompt);
         Log(history);
@@ -98,7 +107,7 @@ public class Bot
         ImageContent imageContent;
         using (MemoryStream stream = new())
         {
-            var response = await httpClient.GetStreamAsync(string.Format(_contentApiUrl, messageId));
+            var response = await httpClient.GetStreamAsync(string.Format(_contentApiEndpoint, messageId));
             response.CopyTo(stream);
             imageContent = new ImageContent(stream.ToArray(), "image/jpeg");
         }
@@ -118,10 +127,10 @@ public class Bot
         using var httpClient = httpClientFactory.CreateClient("LineMessagingApi");
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-        var response = await httpClient.PostAsJsonAsync(_messagingApiUrl, new LineTextReplyJson()
+        var response = await httpClient.PostAsJsonAsync(_messagingApiEndpoint, new LineTextReplyJson()
         {
-            replyToken = replyToken,
-            messages = [new() { Type = "text", Text = message }]
+            ReplyToken = replyToken,
+            Messages = [new() { Type = "text", Text = message }]
         });
         response.EnsureSuccessStatusCode();
     }

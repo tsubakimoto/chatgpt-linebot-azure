@@ -2,7 +2,12 @@
 
 public class LineTextReplyJson
 {
-    public string replyToken { get; set; }
-    public List<Message> messages { get; set; }
-    public bool notificationDisabled { get; set; }
+    [JsonPropertyName("replyToken")]
+    public string ReplyToken { get; set; } = string.Empty;
+
+    [JsonPropertyName("messages")]
+    public List<Message> Messages { get; set; } = new();
+
+    [JsonPropertyName("notificationDisabled")]
+    public bool NotificationDisabled { get; set; }
 }
