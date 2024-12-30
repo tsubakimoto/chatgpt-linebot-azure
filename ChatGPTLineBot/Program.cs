@@ -3,7 +3,11 @@ var c = builder.Configuration;
 
 builder.ConfigureFunctionsWebApplication();
 
-//builder.Services.AddHttpClient();
+builder.Services.Configure<LineOptions>(
+    builder.Configuration.GetSection(LineOptions.SectionName));
+builder.Services.Configure<AzureOptions>(
+    builder.Configuration.GetSection(AzureOptions.SectionName));
+
 builder.Services.AddHttpClient("LineMessagingApi", client =>
 {
     client.BaseAddress = new Uri("https://api.line.me/");
@@ -18,9 +22,9 @@ builder.Services.AddHttpClient("LineContentApi", client =>
 builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddAzureOpenAIChatCompletion(
-    c["AzureOpenAIDeploymentName"]!,
+    c["Azure:OpenAI:DeploymentName"]!,
     new AzureOpenAIClient(
-        new Uri(c["AzureOpenAIEndpoint"]!),
+        new Uri(c["Azure:OpenAI:Endpoint"]!),
         new DefaultAzureCredential()))
     .AddDistributedMemoryCache();
 

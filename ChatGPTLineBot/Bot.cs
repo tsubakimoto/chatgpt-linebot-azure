@@ -19,17 +19,20 @@ public class Bot
     private readonly IConfiguration configuration;
     private readonly IChatCompletionService chatService;
     private readonly IHttpClientFactory httpClientFactory;
+    private readonly LineOptions lineOptions;
 
     public Bot(
         ILogger<Bot> logger,
         IConfiguration configuration,
         IChatCompletionService chatService,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        IOptions<LineOptions> lineOptions)
     {
         this.logger = logger;
         this.configuration = configuration;
         this.chatService = chatService;
         this.httpClientFactory = httpClientFactory;
+        this.lineOptions = lineOptions.Value;
     }
 
     [Function("Bot")]
@@ -65,23 +68,20 @@ public class Bot
             logger.LogDebug("Init conversation: {0}", json.Destination);
         }
 
-        var channelSecret = configuration["LineChannelSecret"];
-        if (IsSignature(xLineSignature!, requestBody, channelSecret!) && json.IsMessageEvent)
+        if (IsSignature(xLineSignature!, requestBody, lineOptions.ChannelSecret!) && json.IsMessageEvent)
         {
-            var accessToken = configuration["LineAccessToken"]!;
             var history = _histories[json.Destination];
-
-            string result = string.Empty;
+            var result = string.Empty;
             if (json.IsTextType)
             {
                 result = await RunCompletionAsync(history, json.MessageText);
             }
             else if (json.IsImageType)
             {
-                result = await ExplainImageAsync(history, json.FirstMessage?.Id ?? string.Empty, accessToken);
+                result = await ExplainImageAsync(history, json.FirstMessage?.Id ?? string.Empty, lineOptions.AccessToken);
             }
 
-            await ReplyAsync(json.ReplyToken, result, accessToken);
+            await ReplyAsync(json.ReplyToken, result, lineOptions.AccessToken);
             return new OkResult();
         }
         return new BadRequestResult();
