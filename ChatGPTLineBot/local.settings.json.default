@@ -3,11 +3,11 @@
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-    "Line:AccessToken": "",
-    "Line:ChannelSecret": "",
-    "Azure:OpenAI:ResourceName": "",
-    "Azure:OpenAI:DeploymentName": "",
-    "Azure:OpenAI:Endpoint": "",
+    "LineAccessToken": "",
+    "LineChannelSecret": "",
+    "AzureOpenAIResourceName": "",
+    "AzureOpenAIDeploymentName": "",
+    "AzureOpenAIEndpoint": "",
     "AZURE_TENANT_ID": ""
   }
 }
