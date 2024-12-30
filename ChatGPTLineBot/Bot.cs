@@ -2,8 +2,8 @@ namespace ChatGPTLineBot;
 
 public class Bot
 {
-    private static readonly string _messagingApiUrl = "https://api.line.me/v2/bot/message/reply";
-    private static readonly string _contentApiUrl = "https://api-data.line.me/v2/bot/message/{0}/content";
+    private static readonly string _messagingApiUrl = "/v2/bot/message/reply";
+    private static readonly string _contentApiUrl = "/v2/bot/message/{0}/content";
     private static readonly string _baseSystemMessage = "You are a helpful assistant.";
     private static readonly TextContent _imageExplainContent = new("Ç±ÇÃâÊëúÇê‡ñæÇµÇƒÇ≠ÇæÇ≥Ç¢ÅB");
     private static readonly Dictionary<string, ChatHistory> _histories = new();
@@ -18,7 +18,7 @@ public class Bot
     private readonly ILogger<Bot> logger;
     private readonly IConfiguration configuration;
     private readonly IChatCompletionService chatService;
-    private readonly HttpClient httpClient;
+    private readonly IHttpClientFactory httpClientFactory;
 
     public Bot(
         ILogger<Bot> logger,
@@ -29,8 +29,7 @@ public class Bot
         this.logger = logger;
         this.configuration = configuration;
         this.chatService = chatService;
-
-        httpClient = httpClientFactory.CreateClient();
+        this.httpClientFactory = httpClientFactory;
     }
 
     [Function("Bot")]
@@ -93,6 +92,7 @@ public class Bot
 
     private async Task<string> ExplainImageAsync(ChatHistory history, string messageId, string accessToken)
     {
+        using var httpClient = httpClientFactory.CreateClient("LineContentApi");
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
         ImageContent imageContent;
@@ -115,20 +115,13 @@ public class Bot
 
     private async Task ReplyAsync(string replyToken, string message, string accessToken)
     {
-        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        using var httpClient = httpClientFactory.CreateClient("LineMessagingApi");
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
         var response = await httpClient.PostAsJsonAsync(_messagingApiUrl, new LineTextReplyJson()
         {
             replyToken = replyToken,
-            messages = new List<Message>()
-                {
-                    new Message
-                    {
-                        Type = "text",
-                        Text = message
-                    }
-                }
+            messages = [new() { Type = "text", Text = message }]
         });
         response.EnsureSuccessStatusCode();
     }
