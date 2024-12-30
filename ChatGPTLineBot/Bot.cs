@@ -3,7 +3,9 @@ namespace ChatGPTLineBot;
 public class Bot
 {
     private static readonly string _messagingApiUrl = "https://api.line.me/v2/bot/message/reply";
+    private static readonly string _contentApiUrl = "https://api-data.line.me/v2/bot/message/{0}/content";
     private static readonly string _baseSystemMessage = "You are a helpful assistant.";
+    private static readonly TextContent _imageExplainContent = new("Ç±ÇÃâÊëúÇê‡ñæÇµÇƒÇ≠ÇæÇ≥Ç¢ÅB");
     private static readonly Dictionary<string, ChatHistory> _histories = new();
     private static readonly AzureOpenAIPromptExecutionSettings _settings = new()
     {
@@ -43,7 +45,7 @@ public class Bot
         logger.LogDebug("Request body: {0}", requestBody);
 
         var json = JsonSerializer.Deserialize<LineMessageReceiveJson>(requestBody);
-        logger.LogDebug("Message: {0}", json.Message);
+        logger.LogDebug("Message: {0}", json.MessageText);
 
         if (!_histories.ContainsKey(json.Destination))
         {
@@ -60,7 +62,16 @@ public class Bot
             && json.EventType == "message")
         {
             var history = _histories[json.Destination];
-            var result = await RunCompletionAsync(history, json.Destination, json.Message);
+
+            string result = string.Empty;
+            if (json.IsTextType)
+            {
+                result = await RunCompletionAsync(history, json.Destination, json.MessageText);
+            }
+            else if (json.IsImageType)
+            {
+                result = await ExplainImageAsync(history, json.FirstMessage.Id, accessToken);
+            }
 
             await ReplyAsync(json.ReplyToken, result, accessToken);
             return new OkResult();
@@ -80,6 +91,28 @@ public class Bot
         return assistant.ToString();
     }
 
+    private async Task<string> ExplainImageAsync(ChatHistory history, string messageId, string accessToken)
+    {
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        ImageContent imageContent;
+        using (MemoryStream stream = new())
+        {
+            var response = await httpClient.GetStreamAsync(string.Format(_contentApiUrl, messageId));
+            response.CopyTo(stream);
+            imageContent = new ImageContent(stream.ToArray(), "image/jpeg");
+        }
+
+        history.AddUserMessage(new ChatMessageContentItemCollection { _imageExplainContent, imageContent });
+        logger.LogDebug($"{history.Last().Role} >>> {history.Last().Content}");
+
+        var assistant = await chatService.GetChatMessageContentAsync(history, _settings);
+        history.Add(assistant);
+        logger.LogDebug($"{history.Last().Role} >>> {history.Last().Content}");
+
+        return assistant.ToString();
+    }
+
     private async Task ReplyAsync(string replyToken, string message, string accessToken)
     {
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -89,13 +122,13 @@ public class Bot
         {
             replyToken = replyToken,
             messages = new List<Message>()
-            {
-                new Message
                 {
-                    Type = "text",
-                    Text = message
+                    new Message
+                    {
+                        Type = "text",
+                        Text = message
+                    }
                 }
-            }
         });
         response.EnsureSuccessStatusCode();
     }

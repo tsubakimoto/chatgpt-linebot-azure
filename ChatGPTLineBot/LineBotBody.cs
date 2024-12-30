@@ -10,11 +10,17 @@ public class LineMessageReceiveJson
 
     private Event? FirstEvent => Events?.FirstOrDefault();
 
-    public string? Message => FirstEvent?.Message?.Text;
+    public Message? FirstMessage => FirstEvent?.Message;
+
+    public string? MessageText => FirstEvent?.Message?.Text;
 
     public string? ReplyToken => FirstEvent?.ReplyToken;
 
     public string? EventType => FirstEvent?.Type;
+
+    public bool IsTextType => FirstMessage.Type == "text";
+
+    public bool IsImageType => FirstMessage.Type == "image" && FirstMessage.ContentProvider.Type == "line";
 }
 
 public class Event
@@ -45,6 +51,15 @@ public class Message
 
     [JsonPropertyName("text")]
     public string? Text { get; set; }
+
+    [JsonPropertyName("contentProvider")]
+    public ContentProvider ContentProvider { get; set; }
+}
+
+public class ContentProvider
+{
+    [JsonPropertyName("type")]
+    public string Type { get; set; }
 }
 
 public class Source
