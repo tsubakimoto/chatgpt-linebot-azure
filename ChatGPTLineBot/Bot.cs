@@ -82,11 +82,11 @@ public class Bot
     private async Task<string> RunCompletionAsync(ChatHistory history, string userId, string prompt)
     {
         history.AddUserMessage(prompt);
-        logger.LogDebug($"{history.Last().Role} >>> {history.Last().Content}");
+        Log(history);
 
         var assistant = await chatService.GetChatMessageContentAsync(history, _settings);
         history.Add(assistant);
-        logger.LogDebug($"{history.Last().Role} >>> {history.Last().Content}");
+        Log(history);
 
         return assistant.ToString();
     }
@@ -104,11 +104,11 @@ public class Bot
         }
 
         history.AddUserMessage(new ChatMessageContentItemCollection { _imageExplainContent, imageContent });
-        logger.LogDebug($"{history.Last().Role} >>> {history.Last().Content}");
+        Log(history);
 
         var assistant = await chatService.GetChatMessageContentAsync(history, _settings);
         history.Add(assistant);
-        logger.LogDebug($"{history.Last().Role} >>> {history.Last().Content}");
+        Log(history);
 
         return assistant.ToString();
     }
@@ -132,6 +132,8 @@ public class Bot
         });
         response.EnsureSuccessStatusCode();
     }
+
+    private void Log(ChatHistory history) => logger.LogDebug($"{history.Last().Role} >>> {history.Last().Content}");
 
     private static bool IsSignature(string signature, string text, string key)
     {
