@@ -13,22 +13,26 @@ public class Bot
         MaxTokens = 500,
         FrequencyPenalty = 0,
         PresencePenalty = 0,
+        ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
     };
 
     private readonly ILogger<Bot> logger;
     private readonly IConfiguration configuration;
     private readonly IChatCompletionService chatService;
+    private readonly Kernel kernel;
     private readonly IHttpClientFactory httpClientFactory;
 
     public Bot(
         ILogger<Bot> logger,
         IConfiguration configuration,
         IChatCompletionService chatService,
+        Kernel kernel,
         IHttpClientFactory httpClientFactory)
     {
         this.logger = logger;
         this.configuration = configuration;
         this.chatService = chatService;
+        this.kernel = kernel;
         this.httpClientFactory = httpClientFactory;
     }
 
@@ -92,7 +96,7 @@ public class Bot
         history.AddUserMessage(prompt);
         Log(history);
 
-        var assistant = await chatService.GetChatMessageContentAsync(history, _settings);
+        var assistant = await chatService.GetChatMessageContentAsync(history, _settings, kernel);
         history.Add(assistant);
         Log(history);
 
