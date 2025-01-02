@@ -1,0 +1,7 @@
+@protocol = http
+@hostname = localhost
+@port = 7166
+
+###
+
+GET {{protocol}}://{{hostname}}:{{port}}/api/Echo?q=Who%20is%20MLB%27s%20MVP%20on%202024%3F

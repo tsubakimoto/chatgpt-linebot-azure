@@ -24,7 +24,32 @@ builder.Services.AddAzureOpenAIChatCompletion(
         new DefaultAzureCredential()))
     .AddDistributedMemoryCache();
 
+#pragma warning disable SKEXP0050
+// Semantic Kernel Plugins
+builder.Services.AddSingleton(sp =>
+{
+    return KernelPluginFactory.CreateFromObject(new WebSearchEnginePlugin(new BingConnector(c["BingApiKey"])));
+});
+
+// Add Semantic Kernel
 builder.Services.AddKernel();
+#pragma warning restore SKEXP0050
+
+/*
+#pragma warning disable SKEXP0050
+builder.Services.AddSingleton(sp =>
+{
+    return new WebSearchEnginePlugin(new BingConnector(c["BingApiKey"]));
+});
+
+builder.Services.AddTransient(sp =>
+{
+    KernelPluginCollection plugins = [];
+    plugins.AddFromObject(sp.GetRequiredService<WebSearchEnginePlugin>());
+    return new Kernel(sp, plugins);
+});
+#pragma warning restore SKEXP0050
+*/
 
 // Application Insights isn't enabled by default. See https://aka.ms/AAt8mw4.
 // builder.Services
