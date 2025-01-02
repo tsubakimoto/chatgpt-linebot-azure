@@ -8,6 +8,7 @@
     "AzureOpenAIResourceName": "",
     "AzureOpenAIDeploymentName": "",
     "AzureOpenAIEndpoint": "",
+    "BingApiKey": "",
     "AZURE_TENANT_ID": ""
   }
 }
